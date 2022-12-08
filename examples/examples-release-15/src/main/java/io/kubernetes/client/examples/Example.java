@@ -27,8 +27,10 @@ public class Example {
         Configuration.setDefaultApiClient(apiClient);
 
         CoreV1Api coreV1Api = new CoreV1Api();
+        // PodList is a list of Pods.
         V1PodList pods =
                 coreV1Api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null, null);
+        // pods.getItems() are List<V1Pod>
         if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
             pods.getItems().forEach((pod) -> System.out.println(pod.getMetadata().getName()));
         }
