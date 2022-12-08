@@ -44,7 +44,7 @@ public class WatchExample {
                 null, null, null, null, null, LIMIT, null, null, null, WATCH, null);
 
         /**
-         * watchType The type of the WatchResponse
+         * watchType is the type of the WatchResponse after calling createWatch method
          */
         Type watchType = new TypeToken<Watch.Response<V1Namespace>>() {
         }.getType();
