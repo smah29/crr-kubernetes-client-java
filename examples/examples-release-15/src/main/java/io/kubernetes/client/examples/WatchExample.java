@@ -30,7 +30,7 @@ public class WatchExample {
     ApiClient apiClient = Config.defaultClient();
     // infinite timeout
     OkHttpClient httpClient =
-            apiClient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+        apiClient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
     apiClient.setHttpClient(httpClient);
     Configuration.setDefaultApiClient(apiClient);
 
@@ -41,7 +41,7 @@ public class WatchExample {
      * CoreV1Api.listNamespaceCall and set watch to True and watch the changes to namespaces.
      */
     Call call = coreV1Api.listNamespaceCall(
-            null, null, null, null, null, LIMIT, null, null, null, WATCH, null);
+        null, null, null, null, null, LIMIT, null, null, null, WATCH, null);
 
     /**
      * watchType is the type of the WatchResponse after calling createWatch method

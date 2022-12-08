@@ -40,7 +40,7 @@ public class KubeConfigFileClientExample {
 
     // invokes the CoreV1Api apiClient
     V1PodList pods =
-            coreV1Api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null, null);
+        coreV1Api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null, null);
 
     // pods.getItems() are List<V1Pod>
     if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
