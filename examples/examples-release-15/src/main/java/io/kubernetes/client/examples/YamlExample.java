@@ -36,6 +36,7 @@ public class YamlExample {
     V1Pod pod = createPod("apod", "www", "nginx");
     System.out.println(Yaml.dump(pod));
 
+    // NodePort. Exposes a service via a static port on each node’s IP.
     V1Service svc = createService("aservice", "NodePort", "ClientIP", new ServicePort(8080, "TCP", "client"));
     System.out.println(Yaml.dump(svc));
 
