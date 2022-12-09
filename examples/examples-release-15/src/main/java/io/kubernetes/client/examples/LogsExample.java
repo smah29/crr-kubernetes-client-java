@@ -1,15 +1,3 @@
-/*
-Copyright 2020 The Kubernetes Authors.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package io.kubernetes.client.examples;
 
 import io.kubernetes.client.PodLogs;
@@ -18,8 +6,11 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.Streams;
+import org.apache.commons.collections.CollectionUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -33,19 +24,23 @@ import java.io.InputStream;
  */
 public class LogsExample {
   public static void main(String[] args) throws IOException, ApiException, InterruptedException {
-    ApiClient client = Config.defaultClient();
-    Configuration.setDefaultApiClient(client);
-    CoreV1Api coreApi = new CoreV1Api(client);
+    ApiClient apiClient = Config.defaultClient();
+    Configuration.setDefaultApiClient(apiClient);
+    CoreV1Api coreV1Api = new CoreV1Api(apiClient);
 
-    PodLogs logs = new PodLogs();
-    V1Pod pod =
-        coreApi
-            .listNamespacedPod(
-                "default", "false", null, null, null, null, null, null, null, null, null)
-            .getItems()
-            .get(0);
+    String namespace = "default";
+    String pretty = "false";
 
-    InputStream is = logs.streamNamespacedPodLog(pod);
-    Streams.copy(is, System.out);
+    V1PodList pods = coreV1Api.listNamespacedPod(
+        namespace, pretty, null, null, null, null, null, null, null, null, null);
+    if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
+      V1Pod pod = pods.getItems().get(0);
+      /**
+       * Fetch logs from running containers, equal to kubectl logs
+       */
+      PodLogs podLogs = new PodLogs();
+      InputStream is = podLogs.streamNamespacedPodLog(pod);
+      Streams.copy(is, System.out);
+    }
   }
 }
