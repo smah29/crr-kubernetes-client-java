@@ -56,7 +56,7 @@ public class ProtoExample {
   }
 
   private static void updateNameSpace(ProtoClient protoClient, ObjectOrStatus<Namespace> ns, String namespace) throws IOException, ApiException {
-    String nameSpacePath = NAMESPACE_BASE_PATH + namespace;
+    String nameSpacePath = NAMESPACE_BASE_PATH + "/" + namespace;
     Namespace namespaceObj =
         ns.object
             .toBuilder()
@@ -69,7 +69,7 @@ public class ProtoExample {
   }
 
   private static void deleteNameSpace(ProtoClient protoClient, String namespace) throws IOException, ApiException {
-    String nameSpacePath = NAMESPACE_BASE_PATH + namespace;
+    String nameSpacePath = NAMESPACE_BASE_PATH + "/" + namespace;
     ObjectOrStatus<Namespace> ns = protoClient.delete(Namespace.newBuilder(), nameSpacePath);
     System.out.println(ns);
   }
