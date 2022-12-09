@@ -60,6 +60,7 @@ public class YamlExample {
 
     System.out.println(newService);
 
+    // I think the service name and namespace order of params need to be the same as createNamespacedService method
     V1Service deleteResult =
         coreV1Api.deleteNamespacedService(
             yamlSvc.getMetadata().getName(),
