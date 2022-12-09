@@ -5,6 +5,7 @@ import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.informer.cache.Lister;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
@@ -23,6 +24,7 @@ import okhttp3.OkHttpClient;
  * -Dexec.mainClass="io.kubernetes.client.examples.InformerExample"
  *
  * <p>From inside $REPO_DIR/examples
+ * <p>Build an informer which list-watches resources and reflects the notifications to a local cache.
  */
 public class InformerExample {
   public static void main(String[] args) throws Exception {
@@ -33,6 +35,29 @@ public class InformerExample {
     apiClient.setHttpClient(httpClient);
 
     SharedInformerFactory factory = new SharedInformerFactory(apiClient);
+
+    SharedIndexInformer<V1Node> nodeInformer = getNodeSharedIndexInformer(coreV1Api, factory);
+
+    factory.startAllRegisteredInformers();
+
+    String nodeName = "noxu";
+
+    createNode(coreV1Api, nodeName);
+    Thread.sleep(3000);
+
+    listenNode(nodeInformer, nodeName);
+    factory.stopAllRegisteredInformers();
+    Thread.sleep(3000);
+    System.out.println("informer stopped..");
+  }
+
+  private static void listenNode(SharedIndexInformer<V1Node> nodeInformer, String nodeName) {
+    Lister<V1Node> nodeLister = new Lister<V1Node>(nodeInformer.getIndexer());
+    V1Node node = nodeLister.get(nodeName);
+    System.out.printf(nodeName + " created! %s\n", node.getMetadata().getCreationTimestamp());
+  }
+
+  private static SharedIndexInformer<V1Node> getNodeSharedIndexInformer(CoreV1Api coreV1Api, SharedInformerFactory factory) {
     // **NOTE**:
     // The following "CallGeneratorParams" lambda merely generates a stateless
     // HTTPs requests, the effective apiClient is the one specified when constructing
@@ -77,25 +102,19 @@ public class InformerExample {
             System.out.printf("%s node deleted!\n", node.getMetadata().getName());
           }
         });
+    return nodeInformer;
+  }
 
-    factory.startAllRegisteredInformers();
-    /**
-     * A node may be a virtual or physical machine, depending on the cluster.
-     * Each node is managed by the control plane and contains the services necessary to run Pods.
-     * https://kubernetes.io/docs/concepts/architecture/nodes/
-     */
+  /**
+   * A node may be a virtual or physical machine, depending on the cluster.
+   * Each node is managed by the control plane and contains the services necessary to run Pods.
+   * https://kubernetes.io/docs/concepts/architecture/nodes/
+   */
+  private static void createNode(CoreV1Api coreV1Api, String nodeName) throws ApiException {
     V1Node nodeToCreate = new V1Node();
     V1ObjectMeta metadata = new V1ObjectMeta();
-    metadata.setName("noxu");
+    metadata.setName(nodeName);
     nodeToCreate.setMetadata(metadata);
     V1Node createdNode = coreV1Api.createNode(nodeToCreate, null, null, null, null);
-    Thread.sleep(3000);
-
-    Lister<V1Node> nodeLister = new Lister<V1Node>(nodeInformer.getIndexer());
-    V1Node node = nodeLister.get("noxu");
-    System.out.printf("noxu created! %s\n", node.getMetadata().getCreationTimestamp());
-    factory.stopAllRegisteredInformers();
-    Thread.sleep(3000);
-    System.out.println("informer stopped..");
   }
 }
