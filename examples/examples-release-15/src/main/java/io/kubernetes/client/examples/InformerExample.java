@@ -1,15 +1,3 @@
-/*
-Copyright 2020 The Kubernetes Authors.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package io.kubernetes.client.examples;
 
 import io.kubernetes.client.informer.ResourceEventHandler;
@@ -21,8 +9,11 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.util.CallGenerator;
 import io.kubernetes.client.util.CallGeneratorParams;
+
 import java.util.concurrent.TimeUnit;
+
 import okhttp3.OkHttpClient;
 
 /**
@@ -42,28 +33,28 @@ public class InformerExample {
     apiClient.setHttpClient(httpClient);
 
     SharedInformerFactory factory = new SharedInformerFactory(apiClient);
-
+    // **NOTE**:
+    // The following "CallGeneratorParams" lambda merely generates a stateless
+    // HTTPs requests, the effective apiClient is the one specified when constructing
+    // the informer-factory.
+    CallGenerator callGenerator = (CallGeneratorParams params) -> {
+      return coreV1Api.listNodeCall(
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          params.resourceVersion,
+          null,
+          params.timeoutSeconds,
+          params.watch,
+          null);
+    };
     // Node informer
     SharedIndexInformer<V1Node> nodeInformer =
         factory.sharedIndexInformerFor(
-            // **NOTE**:
-            // The following "CallGeneratorParams" lambda merely generates a stateless
-            // HTTPs requests, the effective apiClient is the one specified when constructing
-            // the informer-factory.
-            (CallGeneratorParams params) -> {
-              return coreV1Api.listNodeCall(
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  null,
-                  params.resourceVersion,
-                  null,
-                  params.timeoutSeconds,
-                  params.watch,
-                  null);
-            },
+            callGenerator,
             V1Node.class,
             V1NodeList.class);
 
@@ -88,7 +79,11 @@ public class InformerExample {
         });
 
     factory.startAllRegisteredInformers();
-
+    /**
+     * A node may be a virtual or physical machine, depending on the cluster.
+     * Each node is managed by the control plane and contains the services necessary to run Pods.
+     * https://kubernetes.io/docs/concepts/architecture/nodes/
+     */
     V1Node nodeToCreate = new V1Node();
     V1ObjectMeta metadata = new V1ObjectMeta();
     metadata.setName("noxu");
