@@ -14,6 +14,7 @@ import io.kubernetes.client.util.Config;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.AllArgsConstructor;
@@ -50,7 +51,6 @@ public class FluentExample {
     V1PodList pods =
         coreV1Api.listNamespacedPod(
             NAMESPACE, null, null, null, null, null, null, null, null, null, null);
-    // pods.getItems() are List<V1Pod>
     if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
       pods.getItems().forEach((pod) -> System.out.println(pod.getMetadata().getName()));
     }
@@ -58,13 +58,11 @@ public class FluentExample {
 
   private static V1Pod createPod(String podName, MyContainer container, boolean fluent) {
     if (fluent) return createPodFluentStyle(podName, container);
-    V1Pod pod2 =
-        new V1Pod()
-            .metadata(new V1ObjectMeta().name(podName))
-            .spec(
-                new V1PodSpec()
-                    .containers(Arrays.asList(new V1Container().name(container.getName()).image(container.getImage()))));
-    return pod2;
+
+    List<V1Container> containers = Arrays.asList(new V1Container().name(container.getName()).image(container.getImage()));
+    return new V1Pod()
+        .metadata(new V1ObjectMeta().name(podName))
+        .spec(new V1PodSpec().containers(containers));
   }
 
   private static V1Pod createPodFluentStyle(String podName, MyContainer container) {
