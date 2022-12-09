@@ -46,7 +46,7 @@ public class FluentExample {
 
     V1Pod pod2 = createPod("anotherpod", container, false);
 
-    coreV1Api.createNamespacedPod("default", pod2, null, null, null, null);
+    coreV1Api.createNamespacedPod(NAMESPACE, pod2, null, null, null, null);
 
     V1PodList pods =
         coreV1Api.listNamespacedPod(
