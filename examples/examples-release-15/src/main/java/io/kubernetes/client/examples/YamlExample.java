@@ -45,7 +45,8 @@ public class YamlExample {
 
     //  See issue #474. Not needed at most cases, but it is needed if you are using war
     //  packging or running this on JUnit.
-    Yaml.addModelMap("v1", "Service", V1Service.class);
+    String apiGroupVersion = "v1", kind = "Service";
+    Yaml.addModelMap(apiGroupVersion, kind, V1Service.class);
 
     // Example yaml file can be found in $REPO_DIR/test-svc.yaml
     File file = new File("test-svc.yaml");
