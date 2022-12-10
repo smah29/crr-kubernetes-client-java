@@ -114,7 +114,7 @@ public class DeployRolloutRestartExample {
   private static V1Deployment getDeployment(String deploymentName, String imageName, String namespace) {
 
     V1ObjectMeta deploymentMeta = new V1ObjectMeta().name(deploymentName).namespace(namespace);
-    int numReplicas = 1;
+    int numberOfReplicas = 1;
     V1LabelSelector deploymentSelectorSpec = new V1LabelSelector().putMatchLabelsItem("name", deploymentName);
 
     V1ObjectMeta deploymentTemplateSpecMeta = new V1ObjectMeta().putLabelsItem("name", deploymentName);
@@ -132,7 +132,7 @@ public class DeployRolloutRestartExample {
         .withMetadata(deploymentMeta)
         .withSpec(
             new V1DeploymentSpec()
-                .replicas(numReplicas)
+                .replicas(numberOfReplicas)
                 .selector(deploymentSelectorSpec)
                 .template(deploymentTemplateSpec))
         .build();
