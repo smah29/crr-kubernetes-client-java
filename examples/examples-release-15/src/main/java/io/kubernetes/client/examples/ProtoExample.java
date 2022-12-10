@@ -1,15 +1,3 @@
-/*
-Copyright 2020 The Kubernetes Authors.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package io.kubernetes.client.examples;
 
 import io.kubernetes.client.ProtoClient;
@@ -23,6 +11,7 @@ import io.kubernetes.client.proto.V1.NamespaceSpec;
 import io.kubernetes.client.proto.V1.Pod;
 import io.kubernetes.client.proto.V1.PodList;
 import io.kubernetes.client.util.Config;
+
 import java.io.IOException;
 
 /**
@@ -32,38 +21,66 @@ import java.io.IOException;
  * -Dexec.mainClass="io.kubernetes.client.examples.ProtoExample"
  *
  * <p>From inside $REPO_DIR/examples
+ * <p>Request/receive payloads in protobuf serialization protocol.
  */
 public class ProtoExample {
-  public static void main(String[] args) throws IOException, ApiException, InterruptedException {
-    ApiClient client = Config.defaultClient();
-    Configuration.setDefaultApiClient(client);
 
-    ProtoClient pc = new ProtoClient(client);
-    ObjectOrStatus<PodList> list = pc.list(PodList.newBuilder(), "/api/v1/namespaces/default/pods");
+  private static final String NAMESPACE_DEFAULT = "default";
+  private static final String NAMESPACE_TEST = "test";
+  private static final String NAMESPACE_BASE_PATH = "/api/v1/namespaces";
+  private static final String PODS_PATH = "/api/v1/namespaces/{0}/pods";
+  private static final String KIND = "Namespace";
+  private static final String API_VERSION = "v1";
+
+  public static void main(String[] args) throws IOException, ApiException, InterruptedException {
+    ApiClient apiClient = Config.defaultClient();
+    Configuration.setDefaultApiClient(apiClient);
+
+    ProtoClient protoClient = new ProtoClient(apiClient);
+    fetchAllPodsByNameSpace(protoClient, NAMESPACE_DEFAULT);
+
+    ObjectOrStatus<Namespace> ns = createNameSpace(protoClient, NAMESPACE_TEST);
+
+    if (ns.object != null)
+      updateNameSpace(protoClient, ns, NAMESPACE_TEST);
+
+    deleteNameSpace(protoClient, NAMESPACE_TEST);
+  }
+
+  private static ObjectOrStatus<Namespace> createNameSpace(ProtoClient protoClient, String namespace) throws IOException, ApiException {
+    Namespace namespaceObj =
+        Namespace.newBuilder().setMetadata(ObjectMeta.newBuilder().setName(namespace).build()).build();
+    ObjectOrStatus<Namespace> ns = protoClient.create(namespaceObj, NAMESPACE_BASE_PATH, API_VERSION, KIND);
+    System.out.println(ns);
+    return ns;
+  }
+
+  private static void updateNameSpace(ProtoClient protoClient, ObjectOrStatus<Namespace> ns, String namespace) throws IOException, ApiException {
+    String nameSpacePath = NAMESPACE_BASE_PATH + "/" + namespace;
+    Namespace namespaceObj =
+        ns.object
+            .toBuilder()
+            .setSpec(NamespaceSpec.newBuilder().addFinalizers(namespace).build())
+            .build();
+    // This is how you would update an object, but you can't actually
+    // update namespaces, so this returns a 405
+    ns = protoClient.update(namespaceObj, nameSpacePath, API_VERSION, KIND);
+    System.out.println(ns.status);
+  }
+
+  private static void deleteNameSpace(ProtoClient protoClient, String namespace) throws IOException, ApiException {
+    String nameSpacePath = NAMESPACE_BASE_PATH + "/" + namespace;
+    ObjectOrStatus<Namespace> ns = protoClient.delete(Namespace.newBuilder(), nameSpacePath);
+    System.out.println(ns);
+  }
+
+  private static void fetchAllPodsByNameSpace(ProtoClient protoClient, String namespace) throws IOException, ApiException {
+    String newPodsPath = PODS_PATH.replace("{0}", namespace);
+    ObjectOrStatus<PodList> list = protoClient.list(PodList.newBuilder(), newPodsPath);
 
     if (list.object.getItemsCount() > 0) {
-      Pod p = list.object.getItems(0);
-      System.out.println(p);
+      Pod pod = list.object.getItems(0);
+      System.out.println(pod);
     }
-
-    Namespace namespace =
-        Namespace.newBuilder().setMetadata(ObjectMeta.newBuilder().setName("test").build()).build();
-
-    ObjectOrStatus<Namespace> ns = pc.create(namespace, "/api/v1/namespaces", "v1", "Namespace");
-    System.out.println(ns);
-    if (ns.object != null) {
-      namespace =
-          ns.object
-              .toBuilder()
-              .setSpec(NamespaceSpec.newBuilder().addFinalizers("test").build())
-              .build();
-      // This is how you would update an object, but you can't actually
-      // update namespaces, so this returns a 405
-      ns = pc.update(namespace, "/api/v1/namespaces/test", "v1", "Namespace");
-      System.out.println(ns.status);
-    }
-
-    ns = pc.delete(Namespace.newBuilder(), "/api/v1/namespaces/test");
-    System.out.println(ns);
   }
 }

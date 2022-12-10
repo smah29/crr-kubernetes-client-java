@@ -1,15 +1,3 @@
-/*
-Copyright 2020 The Kubernetes Authors.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package io.kubernetes.client.examples;
 
 import io.kubernetes.client.openapi.ApiClient;
@@ -20,6 +8,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
+import org.apache.commons.collections.CollectionUtils;
+
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -30,6 +20,7 @@ import java.io.IOException;
  * -Dexec.mainClass="io.kubernetes.client.examples.KubeConfigFileClientExample"
  *
  * <p>From inside $REPO_DIR/examples
+ * <p>Configure a client to access a Kubernetes cluster from outside.
  */
 public class KubeConfigFileClientExample {
   public static void main(String[] args) throws IOException, ApiException {
@@ -38,21 +29,23 @@ public class KubeConfigFileClientExample {
 
     String kubeConfigPath = System.getenv("HOME") + "/.kube/config";
 
+    KubeConfig kubeConfig = KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath));
     // loading the out-of-cluster config, a kubeconfig from file-system
-    ApiClient client =
-        ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
+    ApiClient apiClient = ClientBuilder.kubeconfig(kubeConfig).build();
 
-    // set the global default api-client to the in-cluster one from above
-    Configuration.setDefaultApiClient(client);
+    // set the global default coreV1Api-apiClient to the in-cluster one from above
+    Configuration.setDefaultApiClient(apiClient);
 
-    // the CoreV1Api loads default api-client from global configuration.
-    CoreV1Api api = new CoreV1Api();
+    // the CoreV1Api loads default coreV1Api-apiClient from global configuration.
+    CoreV1Api coreV1Api = new CoreV1Api();
 
-    // invokes the CoreV1Api client
-    V1PodList list =
-        api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null, null);
-    for (V1Pod item : list.getItems()) {
-      System.out.println(item.getMetadata().getName());
+    // invokes the CoreV1Api apiClient
+    V1PodList pods =
+        coreV1Api.listPodForAllNamespaces(null, null, null, null, null, null, null, null, null, null);
+
+    // pods.getItems() are List<V1Pod>
+    if (pods != null && CollectionUtils.isNotEmpty(pods.getItems())) {
+      pods.getItems().forEach((pod) -> System.out.println(pod.getMetadata().getName()));
     }
   }
 }

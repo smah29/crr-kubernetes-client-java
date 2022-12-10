@@ -1,15 +1,3 @@
-/*
-Copyright 2020 The Kubernetes Authors.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package io.kubernetes.client.examples;
 
 import com.google.gson.reflect.TypeToken;
@@ -20,29 +8,53 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.Watch;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import okhttp3.OkHttpClient;
 
-/** A simple example of how to use Watch API to watch changes in Namespace list. */
+import okhttp3.OkHttpClient;
+import okhttp3.Call;
+
+import java.lang.reflect.Type;
+
+/**
+ * A simple example of how to use Watch API to watch changes in Namespace list.
+ * <p>https://github.com/kubernetes-client/java/wiki/3.-Code-Examples
+ * <p>watch on namespace object
+ */
 public class WatchExample {
+  private static final Integer LIMIT = 5;
+  private static final Boolean WATCH = Boolean.TRUE;
+
   public static void main(String[] args) throws IOException, ApiException {
-    ApiClient client = Config.defaultClient();
+    ApiClient apiClient = Config.defaultClient();
     // infinite timeout
     OkHttpClient httpClient =
-        client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
-    client.setHttpClient(httpClient);
-    Configuration.setDefaultApiClient(client);
+        apiClient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+    apiClient.setHttpClient(httpClient);
+    Configuration.setDefaultApiClient(apiClient);
 
-    CoreV1Api api = new CoreV1Api();
+    CoreV1Api coreV1Api = new CoreV1Api();
 
-    Watch<V1Namespace> watch =
-        Watch.createWatch(
-            client,
-            api.listNamespaceCall(
-                null, null, null, null, null, 5, null, null, null, Boolean.TRUE, null),
-            new TypeToken<Watch.Response<V1Namespace>>() {}.getType());
+    /**
+     * watch flag is set in the call
+     * CoreV1Api.listNamespaceCall and set watch to True and watch the changes to namespaces.
+     */
+    Call call = coreV1Api.listNamespaceCall(
+        null, null, null, null, null, LIMIT, null, null, null, WATCH, null);
 
+    /**
+     * watchType is the type of the WatchResponse after calling createWatch method
+     */
+    Type watchType = new TypeToken<Watch.Response<V1Namespace>>() {
+    }.getType();
+
+    /**
+     * Creates a watch on a V1Namespace using an API Client and a Call object.
+     * @return Watch object on V1Namespace
+     * @throws ApiException on IO exceptions.
+     */
+    Watch<V1Namespace> watch = Watch.createWatch(apiClient, call, watchType);
     try {
       for (Watch.Response<V1Namespace> item : watch) {
         System.out.printf("%s : %s%n", item.type, item.object.getMetadata().getName());
